@@ -13,6 +13,7 @@ export default defineConfig({
   testDir: './tests',
   /* Maximum time one test can run for. */
   timeout: 180 * 1000,
+
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -34,14 +35,20 @@ export default defineConfig({
   use: {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 30 * 1000,
+    /* Timeout for each navigation action in milliseconds.*/
+    navigationTimeout: 60 * 1000,
+    
     headless: false,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://',
+    baseURL: 'https://oc-test.onecontract-cloud.com/',
+    
+    /* custome test id. */
+    testIdAttribute: "data-tester-id",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     video: 'on-first-retry',
-  },
+  },                         
 
   /* Configure projects for major browsers */
   projects: [

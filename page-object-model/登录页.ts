@@ -1,9 +1,9 @@
-import TestComponent from './TestComponent';
+import 组件 from './TestComponent';
 
-export default class 登录页 extends TestComponent {
+export default class 登录页 extends 组件 {
 
     async goto() {
-        await super.goto('https://oc-test.onecontract-cloud.com/oauth/login');
+        await this.page.goto('/oauth/login');
     }
 
     async 登录(账号: string, 密码: string) {
