@@ -1,106 +1,106 @@
-import { test as base } from '@playwright/test';
-import type { Browser, BrowserContext, Page } from 'playwright-core';
-import 登录页 from '../page-object-model/登录页';
-import 合同查询 from '../page-object-model/合同查询';
+import { test as base, TestInfo } from '@playwright/test';
+import type { Browser, BrowserContext, Page, Response, WebSocket } from 'playwright-core';
+import PagesInstance from './PagesInstance'
 
-async function ListenWebScoket(page: Page): Promise<void> {
-  async function inner(ws: any): Promise<void> {
-    /* 监听到WebSocket后操作 */
-  }
-}
 
-async function Listen403Response(page: Page): Promise<() => Promise<void>> {
-  async function inner(): Promise<void> {
-    /* 监听到403后的操作 */
-  }
-  return inner;
-}
-
-async function ListenWarnResponse(page: Page): Promise<() => Promise<void>> {
-  async function inner(): Promise<void> {
-    /* 监听到警告后的操作 */
-  }
-  return inner;
-}
-
-async function ListenErrorResponse(page: Page): Promise<() => Promise<void>> {
-  async function inner(): Promise<void> {
-    /* 监听到错误后的操作 */
-  }
-  return inner;
-}
-
-class POM {
-  page: Page;
-  登录页: 登录页;
-  合同查询: 合同查询;
-
-  private static pages: Page[] = [];
-
-  constructor(page: Page) {
-    this.page = page;
-    this.登录页 = new 登录页(this.page);
-    this.合同查询 = new 合同查询(this.page);
-  }
-
-  static async create(browser: Browser, testInfo: any, 账户别名 = "未指定用户"): Promise<POM> {
-    const video = testInfo.project.use.video;
-    const videoMode = this.normalizeVideoMode(video);
-    const captureVideo = this.shouldCaptureVideo(videoMode, testInfo);
-    const videoOptions = captureVideo ? {
-      recordVideo: {
-        dir: testInfo.outputDir,
-        size: typeof video === 'string' ? undefined : video.size
-      }
-    } : {};
-    const context = await browser.newContext(videoOptions);
-    context.on('page', page => this.pages.push(page));
-    const page = await context.newPage();
-    return new POM(page);
-  }
-
-  static async close(context: BrowserContext, testInfo: any, 账户别名 = "未指定用户"): Promise<void> {
-    await context.close();
-    const video = testInfo.project.use.video;
-    const videoMode = this.normalizeVideoMode(video);
-    const captureVideo = this.shouldCaptureVideo(videoMode, testInfo);
+async function newContext(
+  browser: Browser,
+  testInfo: TestInfo,
+  账户别名 = "未指定用户"): Promise<{ context: BrowserContext, close: (testInfo: TestInfo) => Promise<void> }> {
+  const pages = []
+  const video = testInfo.project.use.video;
+  const videoMode = normalizeVideoMode(video);
+  const captureVideo = shouldCaptureVideo(videoMode, testInfo);
+  const videoOptions = captureVideo ? {
+    recordVideo: {
+      dir: testInfo.outputDir,
+      size: typeof video === 'string' ? undefined : video?.size
+    }
+  } : {};
+  const context = await browser.newContext(videoOptions);
+  context.on('response', data => ListenResponse(data));
+  context.on('page', page => onPage(pages, page));
+  async function close(testInfo: TestInfo): Promise<void> {
+    await context.close()
     const testFailed = testInfo.status !== testInfo.expectedStatus;
     const preserveVideo = captureVideo && (videoMode === 'on' || testFailed && videoMode === 'retain-on-failure' || videoMode === 'on-first-retry' && testInfo.retry === 1);
     let counter = 0;
     if (preserveVideo) {
-      await Promise.all(this.pages.map(async (page) => {
+      await Promise.all(pages.map(async (page: Page) => {
         try {
           const savedPath = testInfo.outputPath(`${账户别名}${counter ? '-' + counter : ''}.webm`);
           ++counter;
+          console.log(savedPath)
           await page.video()?.saveAs(savedPath);
+          console.log(`${账户别名}--saved`)
           await page.video()?.delete();
+          console.log(`${账户别名}--deleted`)
           testInfo.attachments.push({
             name: 账户别名,
             path: savedPath,
             contentType: 'video/webm'
           });
+          console.log(`${账户别名}--attached`)
         } catch (e) {
           // Silent catch empty videos.
         }
       }));
     }
   }
+  return { context, close }
+}
 
-  private static normalizeVideoMode(video: any): string {
-    if (!video) return 'off';
-    let videoMode = typeof video === 'string' ? video : video.mode;
-    if (videoMode === 'retry-with-video') videoMode = 'on-first-retry';
-    return videoMode;
-  }
+function normalizeVideoMode(video: any): string {
+  if (!video) return 'off';
+  let videoMode = typeof video === 'string' ? video : video.mode;
+  if (videoMode === 'retry-with-video') videoMode = 'on-first-retry';
+  return videoMode;
+}
 
-  private static shouldCaptureVideo(videoMode: string, testInfo: any): boolean {
-    return videoMode === 'on' || videoMode === 'retain-on-failure' || videoMode === 'on-first-retry' && testInfo.retry === 1;
-  }
+function shouldCaptureVideo(videoMode: string, testInfo: TestInfo): boolean {
+  return videoMode === 'on' || videoMode === 'retain-on-failure' || videoMode === 'on-first-retry' && testInfo.retry === 1;
+}
+
+async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
+  const wsmsg = await new Promise(resolve => {
+    ws.on('framereceived', event => {
+      console.log(event.payload);
+      resolve(event.payload);
+    });
+  });
+  const popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").filter({ hasText: wsmsg as string });
+  await popup.evaluate(node => node.style.display = 'none')
+}
+
+async function ListenResponse(response: Response): Promise<void> {
+  await test.step('报告移除-监听', async () => {
+    if (!response.url().includes('https://cdn-')) {
+      if (response.status() === 403) {
+        console.log("Response status code is 403");
+      } else if (response.status() === 200 && await response.headerValue('Content-Type') === 'application/json') {
+        try {
+          const resJson = await response.json();
+          if (resJson.failed) {
+            console.log(resJson.message);
+          }
+        } catch (e) {
+          // Silent catch empty videos.
+        }
+      }
+    }
+  })
+}
+
+async function onPage(pages: Array<Page>, page: Page) {
+  await test.step('报告移除-监听', async () => {
+    pages.push(page)
+    page.on('websocket', ws => ListenWebScoket(page, ws))
+  })
 }
 
 type Accounts = {
-  租户管理员: POM;
-  Flx业务员1_1: POM;
+  租户管理员: PagesInstance;
+  Flx业务员1_1: PagesInstance;
 };
 
 base.beforeAll(async ({ request }) => {
@@ -111,14 +111,15 @@ base.beforeAll(async ({ request }) => {
 // This new "test" can be used in multiple test files, and each of them will get the fixtures.
 export const test = base.extend<Accounts>({
   租户管理员: async ({ browser }, use, testInfo): Promise<void> => {
-    const pom = await POM.create(browser, testInfo);
-    await use(pom);
-    await POM.close(pom.page.context(), testInfo, "租户管理员");
+    const { context, close } = await newContext(browser, testInfo, "租户管理员")
+    await use(new PagesInstance(await context.newPage()));
+    await close(testInfo)
   },
+
   Flx业务员1_1: async ({ browser }, use, testInfo): Promise<void> => {
-    const pom = await POM.create(browser, testInfo);
-    await use(pom);
-    await POM.close(pom.page.context(), testInfo, "Flx业务员1_1");
+    const { context, close } = await newContext(browser, testInfo, "Flx业务员1_1")
+    await use(new PagesInstance(await context.newPage()));
+    await close(testInfo)
   }
 });
 

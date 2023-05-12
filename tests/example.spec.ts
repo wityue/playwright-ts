@@ -17,6 +17,7 @@ test.describe('登录', () => {
       await Flx业务员1_1.page.waitForSelector('"工作台"')
       await Flx业务员1_1.合同查询.goto();
       await Flx业务员1_1.page.waitForSelector('"合同起草"')
+      test.fail()
     });
 
     await test.step('租户管理员登录进入审批规则维护', async () => {

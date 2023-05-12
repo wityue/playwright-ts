@@ -1,6 +1,6 @@
-import 组件 from './TestComponent';
+import PageComponent from './PageComponent';
 
-export default class 登录页 extends 组件 {
+export default class 登录页 extends PageComponent {
 
     async goto() {
         await this.page.goto('/oauth/login');
