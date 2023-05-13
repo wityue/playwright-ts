@@ -1,29 +1,30 @@
-import { test, expect } from './BaseTest';
+import { test, expect, PagesInstance } from './BaseTest';
 
-test.describe('登录', () => {
-  test.describe.configure({ retries: 0 });
-  test('多浏览器视频录制-1', async ({ 租户管理员, Flx业务员1_1 }) => {
-    await test.step('Flx业务员1_1登录REL环境', async () => {
-      await Flx业务员1_1.登录页.goto();
-      await Flx业务员1_1.登录页.登录("zlauto-05", "AKrYN49IfaXp7Wxw");
+test.describe('示例', () => {
+  test.describe.configure({ retries: 2 });
+  test('多用户异步用例-1', async ({ manager, user_1 }) => {
+    await test.step('登录用户', async () => {
+      const users = [
+        { userPageInstance: manager, username: "manager", password: "cloud2018" },
+        { userPageInstance: user_1, username: "user1", password: "cloud2018" }
+      ];
+      await Promise.all(users.map(async (user) => {
+        const { userPageInstance, username, password } = user;
+        await userPageInstance.LoginPage.goto();
+        await userPageInstance.LoginPage.登录(username, password);
+        await userPageInstance.DashboardPage.waitForMe()
+      }));
     });
+  });
 
-    await test.step('租户管理员登录test环境', async () => {
-      await 租户管理员.登录页.goto();
-      await 租户管理员.登录页.登录("zl_automation", "AKrYN49IfaXp7Wxw");
+  test('单用户登录用例-2-此用例将失败', async ({ user_2 }) => {
+    await test.step('登录用户', async () => {
+      await user_2.LoginPage.goto();
+      await user_2.LoginPage.登录("user2", "cloud2018");
+      await user_2.DashboardPage.waitForMe()
     });
-
-    await test.step('Flx业务员进入合同管理', async () => {
-      await Flx业务员1_1.page.waitForSelector('"工作台"')
-      await Flx业务员1_1.合同查询.goto();
-      await Flx业务员1_1.page.waitForSelector('"合同起草"')
-      test.fail()
-    });
-
-    await test.step('租户管理员登录进入审批规则维护', async () => {
-      await 租户管理员.page.waitForSelector('"工作台"')
-      await 租户管理员.page.goto('/system/approvalRules');
-      await 租户管理员.page.waitForSelector('[placeholder="请搜索审批规则名"]')
+    await test.step('断言我关注的元素数量', async () => {
+      expect(await user_2.page.getByText(`我的关注`).count()).toBe(1)
     });
   });
 });
