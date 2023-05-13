@@ -40,7 +40,7 @@ export default defineConfig({
     
     headless: false,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'https://oc-test.onecontract-cloud.com/',
+    baseURL: 'https://demo.cloudlong.cn/',
     
     /* custome test id. */
     testIdAttribute: "data-tester-id",
