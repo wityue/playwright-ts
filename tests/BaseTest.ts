@@ -6,7 +6,10 @@ import PagesInstance from './PagesInstance'
 async function newContext(
   browser: Browser,
   testInfo: TestInfo,
-  账户别名 = "未指定用户"): Promise<{ context: BrowserContext, close: (testInfo: TestInfo) => Promise<void> }> {
+  账户名 = "未指定用户"): Promise<{
+    context: BrowserContext,
+    close: (testInfo: TestInfo) => Promise<void>
+  }> {
   const pages = []
   const video = testInfo.project.use.video;
   const videoMode = normalizeVideoMode(video);
@@ -18,8 +21,10 @@ async function newContext(
     }
   } : {};
   const context = await browser.newContext(videoOptions);
-  context.on('response', data => ListenResponse(data));
-  context.on('page', page => onPage(pages, page));
+  await test.step('DeleteFromTheHtmlreport-监听', async () => {
+    context.on('response', data => ListenResponse(data));
+    context.on('page', page => onPage(pages, page));
+  })
   async function close(testInfo: TestInfo): Promise<void> {
     await context.close()
     const testFailed = testInfo.status !== testInfo.expectedStatus;
@@ -28,19 +33,15 @@ async function newContext(
     if (preserveVideo) {
       await Promise.all(pages.map(async (page: Page) => {
         try {
-          const savedPath = testInfo.outputPath(`${账户别名}${counter ? '-' + counter : ''}.webm`);
+          const savedPath = testInfo.outputPath(`${账户名}${counter ? '-' + counter : ''}.webm`);
           ++counter;
-          console.log(savedPath)
           await page.video()?.saveAs(savedPath);
-          console.log(`${账户别名}--saved`)
           await page.video()?.delete();
-          console.log(`${账户别名}--deleted`)
           testInfo.attachments.push({
-            name: 账户别名,
+            name: 账户名,
             path: savedPath,
             contentType: 'video/webm'
           });
-          console.log(`${账户别名}--attached`)
         } catch (e) {
           // Silent catch empty videos.
         }
@@ -48,6 +49,14 @@ async function newContext(
     }
   }
   return { context, close }
+}
+
+async function newPage(context: BrowserContext, 账户名 = "未指定用户"): Promise<Page> {
+  let page;
+  await test.step(`${账户名}-启动Page`, async () => {
+    page = await context.newPage()
+  })
+  return page
 }
 
 function normalizeVideoMode(video: any): string {
@@ -73,7 +82,7 @@ async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
 }
 
 async function ListenResponse(response: Response): Promise<void> {
-  await test.step('报告移除-监听', async () => {
+  await test.step('DeleteFromTheHtmlreport-监听', async () => {
     if (!response.url().includes('https://cdn-')) {
       if (response.status() === 403) {
         console.log("Response status code is 403");
@@ -92,15 +101,16 @@ async function ListenResponse(response: Response): Promise<void> {
 }
 
 async function onPage(pages: Array<Page>, page: Page) {
-  await test.step('报告移除-监听', async () => {
-    pages.push(page)
+  pages.push(page)
+  await test.step('DeleteFromTheHtmlreport-监听', async () => {
     page.on('websocket', ws => ListenWebScoket(page, ws))
   })
 }
 
 type Accounts = {
-  租户管理员: PagesInstance;
-  Flx业务员1_1: PagesInstance;
+  user_1: PagesInstance;
+  user_2: PagesInstance;
+  manager: PagesInstance;
 };
 
 base.beforeAll(async ({ request }) => {
@@ -110,17 +120,24 @@ base.beforeAll(async ({ request }) => {
 // Extend base test by providing "Accounts"
 // This new "test" can be used in multiple test files, and each of them will get the fixtures.
 export const test = base.extend<Accounts>({
-  租户管理员: async ({ browser }, use, testInfo): Promise<void> => {
-    const { context, close } = await newContext(browser, testInfo, "租户管理员")
-    await use(new PagesInstance(await context.newPage()));
-    await close(testInfo)
+  user_1: async ({ browser }, use, testInfo): Promise<void> => {
+    const { context, close } = await newContext(browser, testInfo, "user_1")
+    await use(new PagesInstance(await newPage(context, 'user_1')));
+    await close(testInfo);
   },
 
-  Flx业务员1_1: async ({ browser }, use, testInfo): Promise<void> => {
-    const { context, close } = await newContext(browser, testInfo, "Flx业务员1_1")
-    await use(new PagesInstance(await context.newPage()));
-    await close(testInfo)
-  }
+  user_2: async ({ browser }, use, testInfo): Promise<void> => {
+    const { context, close } = await newContext(browser, testInfo, "user_2")
+    await use(new PagesInstance(await newPage(context, 'user_2')));
+    await close(testInfo);
+  },
+
+  manager: async ({ browser }, use, testInfo): Promise<void> => {
+    const { context, close } = await newContext(browser, testInfo, "manager")
+    await use(new PagesInstance(await newPage(context, 'manager')));
+    await close(testInfo);
+  },
 });
 
 export { expect } from '@playwright/test';
+export { PagesInstance };
