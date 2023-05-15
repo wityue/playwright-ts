@@ -111,6 +111,7 @@ type Accounts = {
   user_1: PagesInstance;
   user_2: PagesInstance;
   manager: PagesInstance;
+  empty: PagesInstance
 };
 
 base.beforeAll(async ({ request }) => {
@@ -135,6 +136,13 @@ export const test = base.extend<Accounts>({
   manager: async ({ browser }, use, testInfo): Promise<void> => {
     const { context, close } = await newContext(browser, testInfo, "manager")
     await use(new PagesInstance(await newPage(context, 'manager')));
+    await close(testInfo);
+  },
+
+  // 未登录账号Page.
+  empty: async ({ browser }, use, testInfo): Promise<void> => {
+    const { context, close } = await newContext(browser, testInfo)
+    await use(new PagesInstance(await newPage(context)));
     await close(testInfo);
   },
 });
