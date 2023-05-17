@@ -9,23 +9,48 @@ export default abstract class PageComponent {
 		this.locators = new Locators(page);
 	}
 
+	public async click提交() {
+		await this.locators.button("提交").click()
+	}
+
+	public async click确定() {
+		await this.locators.button("确定").click()
+	}
+
+	public async click新建() {
+		await this.locators.button("新建").click()
+	}
+
+
+	/**
+	 * 等待动画结束
+	 * @param locator 元素的定位器
+	 */
+	public async waitForAnimationEnd(locator: Locator) {
+		await locator.evaluate((element) => Promise.all(
+			element
+				.getAnimations()
+				.map((animation) => animation.finished)
+		));
+	}
+
 	public async fillForm(fields: Map<string | Locator, string | null>) {
 		for (const [field, value] of Object.entries(fields)) {
-			let input: Locator;
+			let inputAncestors: Locator;
 			if (typeof field === 'string') {
-				input = this.locators.input(field);
+				inputAncestors = this.locators.inputAncestors(field);
 			} else {
-				input = field;
+				inputAncestors = field;
 			}
-			if (!input) {
+			if (!inputAncestors) {
 				throw new Error(`Input field "${field}" not found`);
 			}
 			switch (this.componentType) {
 				case 'OCANT':
-					this.fillOcAntForm(input, value);
+					await this.fillOcAntForm(inputAncestors, value);
 					break
 				case 'C7N':
-					this.fillC7nForm(input, value)
+					await this.fillC7nForm(inputAncestors, value)
 					break;
 				case 'ANT':
 					// Implement ANT specific logic here
@@ -40,31 +65,22 @@ export default abstract class PageComponent {
 		// Implement fillTable() method here
 	}
 
-	private async fillOcAntForm(input: Locator, value: string | null) {
-		const inputType = await input.getAttribute("type")
-		const modalCount = await this.locators.modal.count()
-		input.click()
-		switch (inputType) {
-			case 'search':
-				await this.locators.selectOptions.or(this.locators.modal.nth(modalCount + 1)).waitFor({ state: "visible" })
-				if (await this.locators.selectOptions.count()) {
-					if (value === null) {
-						await input.selectOption({ index: 0 });
-					} else {
-						await input.fill(value);
-						await input.selectOption({ label: value });
-					}
-				} else {
-					break
-				}
-				break;
-			case 'text':
-				await input.fill(value ?? '');
-				break;
-			default:
-				throw new Error(`Unsupported input type "${inputType}"`);
+	private async fillOcAntForm(inputAncestors: Locator, value: string | null) {
+		const input = inputAncestors.locator("input,textarea")
+		const isSelect = await inputAncestors.locator(this.locators.inputTypeIsSelect).count()
+		if (isSelect) {
+			// Implement select method here
+			return
 		}
+		const isCascader = await inputAncestors.locator(this.locators.inputTypeIsCascader).count()
+		if (isCascader) {
+			// Implement cascader method here
+			return
+		}
+		await input.fill(value);
 	}
+	
+
 
 	private async fillC7nForm(input: Locator, value: string | null) {
 		const inputType = await input.getAttribute("type")
@@ -99,20 +115,60 @@ class Locators {
 	constructor(page: Page) {
 		this.page = page;
 	}
-
-	button(name: string) {
-		return this.page.locator(`button[data-test-id='${name}']`);
+ 
+	/**
+	 * 获取包含'select'的元素的定位器
+	 * @returns 元素的定位器
+	 */
+	get inputTypeIsSelect(): Locator{
+		return this.page.locator("//*[contains(class, 'select')]")
 	}
 
-	input(name: string) {
-		return this.page.locator(`//*[contains(text(), "${name}")]/following::div[position()=1]`).locator("input,textarea");
+	/**
+	 * 获取包含'cascader'的元素的定位器
+	 * @returns 元素的定位器
+	 */
+	get inputTypeIsCascader(): Locator{
+		return this.page.locator("//*[contains(class, 'cascader')]")
 	}
 
-	get selectOptions() {
+	button(name: string): Locator {
+		if (!name.includes(' ')) {
+			const regex = new RegExp(name.split('').join('.*'), 'i');
+			return this.page.locator(`button`).filter({ hasText: regex });
+		} else {
+			return this.page.locator(`button`).filter({ hasText: name });
+		}
+	}
+
+	/**
+	 * 取lable后第一个包含input或textarea的元素,便于判断input输入类型
+	 * @param name label标签的文本
+	 * @param nth 第几个label标签
+	 * @returns input或textarea元素的祖先元素的定位器
+	 */
+
+	inputAncestors(name: string, nth = -1): Locator {
+		const regex = new RegExp(`^\\s*${name}\\s*$`, 'i');
+		return this.page.locator("label").filter({ hasText: regex }).nth(nth).locator("xpath=/following::*[position()=1]").filter({ has: this.page.locator("input,textarea") })
+	}
+
+	/**
+	 * 通过label标签获取input或textarea元素
+	 * @param name label标签的文本
+	 * @param nth 第几个label标签
+	 * @returns input或textarea元素的定位器
+	 */
+	input(name: string, nth = -1): Locator {
+		const regex = new RegExp(`^\\s*${name}\\s*$`, 'i');
+		return this.page.locator("label").filter({ hasText: regex }).nth(nth).locator("xpath=/following::*[position()=1]").locator("input,textarea")
+	}
+
+	get selectOptions(): Locator {
 		return this.page.locator(`//div[contains(@class,'select-dropdown') and not (contains(@class,'dropdown-hidden'))]`)
 	}
 
-	get modal() {
+	get modal(): Locator {
 		return this.page.locator(`//div[contains(@class,"modal-content")]`);
 	}
 }
