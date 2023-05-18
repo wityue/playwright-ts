@@ -59,6 +59,7 @@ export default abstract class PageComponent {
 				default:
 					throw new Error(`Unsupported component type "${this.componentType}"`);
 			}
+			continue;
 		}
 	}
 
@@ -68,12 +69,12 @@ export default abstract class PageComponent {
 
 	private async fillOcAntForm(inputAncestors: Locator, value: string | null) {
 		const input = inputAncestors.locator("input,textarea")
-		const isSelect = await inputAncestors.locator(this.locators.inputTypeIsSelect).count()
+		const isSelect = await inputAncestors.locator(this.locators.hasSelect).count()
 		if (isSelect) {
 			// Implement select method here
 			return
 		}
-		const isCascader = await inputAncestors.locator(this.locators.inputTypeIsCascader).count()
+		const isCascader = await inputAncestors.locator(this.locators.hasCascader).count()
 		if (isCascader) {
 			// Implement cascader method here
 			return
@@ -117,17 +118,19 @@ class Locators {
 
 	/**
 	 * 获取包含'select'的元素的定位器
+	 * 项目可根据实际情况修改此定位器
 	 * @returns 元素的定位器
 	 */
-	get inputTypeIsSelect(): Locator {
+	get hasSelect(): Locator {
 		return this.page.locator("//*[contains(class, 'select')]")
 	}
 
 	/**
 	 * 获取包含'cascader'的元素的定位器
+	 * 项目可根据实际情况修改此定位器
 	 * @returns 元素的定位器
 	 */
-	get inputTypeIsCascader(): Locator {
+	get hasCascader(): Locator {
 		return this.page.locator("//*[contains(class, 'cascader')]")
 	}
 
