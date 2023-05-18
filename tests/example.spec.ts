@@ -1,4 +1,4 @@
-import { test, expect, PagesInstance } from './BaseTest';
+import { test, expect } from './BaseTest';
 
 test.describe('示例', () => {
   test.describe.configure({ retries: 2 });
