@@ -53,6 +53,7 @@ PageCompoment内的fillForm和fillTable方法也需要自行实现,目前方法�
 
 ### data
 
+dataclass 官方文档:<https://dataclass.js.org/guide/>  
 继承dataclass编写数据类,每个表单可作为一个单独的数据类进行定义。
 
 ### tests
