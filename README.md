@@ -13,7 +13,7 @@
 
 ## 安装 && 测试
 
-npm init playwright@latest  
+npm install  
 npx playwright test  
 
 具体操作可至playwright官网学习:<https://playwright.dev/docs/intro>
