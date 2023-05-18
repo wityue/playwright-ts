@@ -34,7 +34,7 @@ export default abstract class PageComponent {
 		));
 	}
 
-	public async fillForm(fields: Map<string | Locator, string | null>) {
+	public async fillForm(fields: Map<string | Locator, string | null | Array<string>>) {
 		for (const [field, value] of Object.entries(fields)) {
 			let inputAncestors: Locator;
 			if (typeof field === 'string') {
@@ -45,12 +45,13 @@ export default abstract class PageComponent {
 			if (!inputAncestors) {
 				throw new Error(`Input field "${field}" not found`);
 			}
+			await this.waitForAnimationEnd(inputAncestors);
 			switch (this.componentType) {
 				case 'OCANT':
 					await this.fillOcAntForm(inputAncestors, value);
 					break
 				case 'C7N':
-					await this.fillC7nForm(inputAncestors, value)
+					await this.fillC7nForm(inputAncestors, value);
 					break;
 				case 'ANT':
 					// Implement ANT specific logic here
@@ -77,10 +78,8 @@ export default abstract class PageComponent {
 			// Implement cascader method here
 			return
 		}
-		await input.fill(value);
+		await input.fill(value ? value : '');
 	}
-	
-
 
 	private async fillC7nForm(input: Locator, value: string | null) {
 		const inputType = await input.getAttribute("type")
@@ -115,12 +114,12 @@ class Locators {
 	constructor(page: Page) {
 		this.page = page;
 	}
- 
+
 	/**
 	 * 获取包含'select'的元素的定位器
 	 * @returns 元素的定位器
 	 */
-	get inputTypeIsSelect(): Locator{
+	get inputTypeIsSelect(): Locator {
 		return this.page.locator("//*[contains(class, 'select')]")
 	}
 
@@ -128,7 +127,7 @@ class Locators {
 	 * 获取包含'cascader'的元素的定位器
 	 * @returns 元素的定位器
 	 */
-	get inputTypeIsCascader(): Locator{
+	get inputTypeIsCascader(): Locator {
 		return this.page.locator("//*[contains(class, 'cascader')]")
 	}
 
