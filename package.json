@@ -8,9 +8,14 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.30.0"
+    "@playwright/test": "^1.33.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.2",
+    "@typescript-eslint/parser": "^5.59.2",
+    "eslint": "^8.40.0",
+    "eslint-plugin-react": "^7.32.2"
   },
   "dependencies": {
+    "dataclass": "^2.1.1",
     "jsencrypt": "^3.3.1"
   }
 }
