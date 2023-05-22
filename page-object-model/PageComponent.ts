@@ -67,7 +67,7 @@ export default abstract class PageComponent {
 		// Implement fillTable() method here
 	}
 
-	private async fillOcAntForm(inputAncestors: Locator, value: string | null) {
+	private async fillOcAntForm(inputAncestors: Locator, value: string | null | Array<string>) {
 		const input = inputAncestors.locator("input,textarea")
 		const isSelect = await inputAncestors.locator(this.locators.hasSelect).count()
 		if (isSelect) {
@@ -79,7 +79,7 @@ export default abstract class PageComponent {
 			// Implement cascader method here
 			return
 		}
-		await input.fill(value ? value : '');
+		await input.fill(value as string);
 	}
 
 	private async fillC7nForm(input: Locator, value: string | null) {
@@ -137,9 +137,9 @@ class Locators {
 	button(name: string): Locator {
 		if (!name.includes(' ')) {
 			const regex = new RegExp(name.split('').join('.*'), 'i');
-			return this.page.locator(`button`).filter({ hasText: regex });
+			return this.page.locator(`button`).filter({ has: this.page.getByText(regex, { exact: true }) });
 		} else {
-			return this.page.locator(`button`).filter({ hasText: name });
+			return this.page.locator(`button`).filter({ has: this.page.getByText(name, { exact: true }) });
 		}
 	}
 
@@ -152,7 +152,7 @@ class Locators {
 
 	inputAncestors(name: string, nth = -1): Locator {
 		const regex = new RegExp(`^\\s*${name}\\s*$`, 'i');
-		return this.page.locator("label").filter({ hasText: regex }).nth(nth).locator("xpath=/following::*[position()=1]").filter({ has: this.page.locator("input,textarea") })
+		return this.page.locator("label").filter({ has: this.page.getByText(regex, { exact: true }) }).nth(nth).locator("xpath=/following::*[position()=1]").filter({ has: this.page.locator("input,textarea") })
 	}
 
 	/**
@@ -171,6 +171,6 @@ class Locators {
 	}
 
 	get modal(): Locator {
-		return this.page.locator(`//div[contains(@class,"modal-content")]`);
+		return this.page.locator(`//div[contains(@class,"modal-content")]`)
 	}
 }
