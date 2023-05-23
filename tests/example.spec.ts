@@ -27,4 +27,17 @@ test.describe('示例', () => {
       expect(await user_2.page.getByText(`我的关注`).count()).toBe(1)
     });
   });
+
+  test('manager查看我的项目-3', async ({ manager }) => {
+    await test.step('登录用户', async () => {
+      await manager.LoginPage.goto();
+      await manager.LoginPage.登录("manager", "cloud2018");
+      await manager.DashboardPage.waitForMe()
+    });
+    await test.step('进入我的项目,查看第3行项目编码', async () => {
+       await manager.MyProject.goto();
+       const cell = await manager.MyProject.项目主表.getCellLocator(3, "项目编号");
+       console.log(await cell.innerText());
+    });
+  });
 });
