@@ -48,10 +48,16 @@ steps: result.steps.filter(s => !s.title.startsWith('DeleteFromTheHtmlreport')).
 
 Locators内通用的定位器可根据项目自行适配。  
 PageCompoment内的fillForm和fillTable方法也需要自行实现,目前方法相当于伪代码,提供了实现的思路。  
+fillTable可通过Table类获取cellLocator后直接调用fillForm进行填写操作。  
+
+#### table.ts 获取表格cellLocator
+
+tableLocator需要根据项目情况自行适配。  
+获取到cellLocator后,可使用playwright Locator的所有方法进行操作。  
 
 #### 其他Page对象,继承PageCompoment,实现Page内方法
 
-### data
+### data-factory
 
 dataclass 官方文档:<https://dataclass.js.org/guide/>  
 继承dataclass编写数据类,每个表单可作为一个单独的数据类进行定义。
