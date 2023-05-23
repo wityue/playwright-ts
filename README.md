@@ -25,7 +25,7 @@ npx playwright test
 1.html-reporter video附件重命名后,无法在video页签下展示,如不重命名,则只能通过观看video内容确定是哪个用户在操作,可修改以下源码解决:  
 路径:node_modules/playwright-core/lib/webpack/htmlReport  
 查找内容:
-=== "video"  
+==="video"  
 将第一个匹配项修改为
 contentType.startsWith("video/")  
 
