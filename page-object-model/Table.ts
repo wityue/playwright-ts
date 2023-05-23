@@ -1,4 +1,5 @@
 import type { Page, Locator } from 'playwright-core';
+import { test } from '@playwright/test'
 
 export default class Table {
     readonly tableLocator: Locator
@@ -6,13 +7,16 @@ export default class Table {
         this.page = page;
         this.tableLocator = this.page.locator('//div[contains(@class,"singleTable")]').filter({ hasText: `${this.tableUniqueText}` });
     }
-
+    
     private async getTableHeaders(): Promise<string[]> {
-        await this.tableLocator.waitFor({ state: "visible" });
-        const headers = await this.tableLocator.locator('thead tr th').all();
-        const headerTexts = await Promise.all(headers.map(async (header) => {
-            return await header.innerText();
-        }));
+        const headerTexts = await test.step('Query table headers and return a list', async () => {
+            await this.tableLocator.waitFor({ state: "visible" });
+            const headers = await this.tableLocator.locator('thead tr th').all();
+            const headerTexts = await Promise.all(headers.map(async (header) => {
+                return await header.innerText();
+            }));
+            return headerTexts;
+        });
         return headerTexts;
     }
 
@@ -38,8 +42,5 @@ export default class Table {
         }
         return rowLocator.locator(`td:nth-child(${col_index + 1})`);
     }
-
-    //生成正常表达式:判断元素text不等于""或者不等于"-"
-
 
 }
