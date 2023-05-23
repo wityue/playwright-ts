@@ -1,4 +1,6 @@
 import type { Page, Locator } from 'playwright-core';
+import Table from './Table'
+
 export default abstract class PageComponent {
 	public readonly page: Page;
 	public readonly componentType: string;
@@ -8,6 +10,10 @@ export default abstract class PageComponent {
 		this.componentType = "OCANT";
 		this.locators = new Locators(page);
 	}
+
+	async goto(path: string) {
+        await this.page.goto(`main#${path}`);
+    }
 
 	public async click提交() {
 		await this.locators.button("提交").click()
@@ -21,6 +27,15 @@ export default abstract class PageComponent {
 		await this.locators.button("新建").click()
 	}
 
+	
+	/**
+	 * 生成表格
+	 * @param tableUniqueText 表格的唯一文本标识符
+	 * @returns 表格对象
+	 */
+	public table(tableUniqueText: string){
+		return new Table(this.page, tableUniqueText)
+	}
 
 	/**
 	 * 等待动画结束
@@ -34,6 +49,11 @@ export default abstract class PageComponent {
 		));
 	}
 
+	
+	/**
+	 * 填写表单
+	 * @param fields 字段名和值的映射
+	 */
 	public async fillForm(fields: Map<string | Locator, string | null | Array<string>>) {
 		for (const [field, value] of Object.entries(fields)) {
 			let inputAncestors: Locator;
