@@ -155,7 +155,8 @@ class Locators {
 	}
 
 	button(name: string): Locator {
-		if (!name.includes(' ')) {
+		// name中间不包含空格且为中文时,字符间加入空格,以使用正则匹配
+		if (!name.includes(' ') && /^[\u4e00-\u9fa5]+$/.test(name) ) {
 			const regex = new RegExp(name.split('').join('.*'), 'i');
 			return this.page.locator(`button`).filter({ has: this.page.getByText(regex, { exact: true }) });
 		} else {
