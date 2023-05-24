@@ -84,7 +84,7 @@ async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
     });
   });
   // Extract subject and content from wsmsg if it contains message with subject or content
-  let subject: string = '', content: string = '';
+  let subject = '', content = '';
   if (wsmsg && typeof wsmsg === 'object' && (wsmsg as WSMessage).message) {
     const message = (wsmsg as WSMessage).message;
     subject = message.subject || '';
