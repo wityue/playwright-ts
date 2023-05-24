@@ -52,9 +52,8 @@ async function newContext(
 }
 
 async function newPage(context: BrowserContext, 账户名 = "未指定用户"): Promise<Page> {
-  let page;
-  await test.step(`${账户名}-启动Page`, async () => {
-    page = await context.newPage()
+  const page = await test.step(`${账户名}-启动Page`, async () => {
+    return await context.newPage()
   })
   return page
 }
@@ -70,6 +69,13 @@ function shouldCaptureVideo(videoMode: string, testInfo: TestInfo): boolean {
   return videoMode === 'on' || videoMode === 'retain-on-failure' || videoMode === 'on-first-retry' && testInfo.retry === 1;
 }
 
+interface WSMessage {
+  message: {
+    subject?: string;
+    content?: string;
+  };
+}
+
 async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
   const wsmsg = await new Promise(resolve => {
     ws.on('framereceived', event => {
@@ -77,7 +83,24 @@ async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
       resolve(event.payload);
     });
   });
-  const popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").filter({ hasText: wsmsg as string });
+  // Extract subject and content from wsmsg if it contains message with subject or content
+  let subject: string = '', content: string = '';
+  if (wsmsg && typeof wsmsg === 'object' && (wsmsg as WSMessage).message) {
+    const message = (wsmsg as WSMessage).message;
+    subject = message.subject || '';
+    content = message.content || '';
+    // remove html tag
+    content = content.replace(/<\/?[^>]+(>|$)/g, '');
+  }
+  let popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").locator( "visible=True" )
+  if (subject) {
+    popup = popup.filter({ hasText: subject });
+  }
+  if (content) {
+    for (const char of content) {
+      popup = popup.filter({ hasText: char })
+    }
+  }
   await popup.evaluate(node => node.style.display = 'none')
 }
 
