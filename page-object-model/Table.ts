@@ -4,15 +4,15 @@ import { test } from '@playwright/test';
 export default class Table {
   private readonly tableLocator: Locator;
 
-  
+
   /**
    * 构造函数
    * @param page 页面对象
    * @param tableUniqueText 表格唯一文本,可以接收一组文本。
    */
   constructor(private page: Page, private tableUniqueText: string | string[]) {
-    this.tableLocator = this.page.locator('//div[contains(@class,"singleTable")]')
-    if (typeof tableUniqueText === "string"){
+    this.tableLocator = this.page.locator('//div[contains(@class,"singleTable")]').filter( { has: this.page.locator("visible=true") } )
+    if (typeof tableUniqueText === "string") {
       this.tableLocator = this.tableLocator.filter({ hasText: `${this.tableUniqueText}` });
     } else {
       this.tableLocator = tableUniqueText.reduce((acc, text) => acc.filter({ hasText: text }), this.tableLocator);
@@ -51,7 +51,7 @@ export default class Table {
       return this.tableLocator
         .locator('tbody')
         .locator('tr')
-        .locator('visible=True')
+        .locator('visible=true')
         .nth(row - 1);
     }
   }

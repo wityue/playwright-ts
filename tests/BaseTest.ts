@@ -92,7 +92,7 @@ async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
     // remove html tag
     content = content.replace(/<\/?[^>]+(>|$)/g, '');
   }
-  let popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").locator( "visible=True" )
+  let popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").locator( "visible=true" )
   if (subject) {
     popup = popup.filter({ hasText: subject });
   }

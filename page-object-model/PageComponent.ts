@@ -12,8 +12,8 @@ export default abstract class PageComponent {
 	}
 
 	async goto(path: string) {
-        await this.page.goto(`main#${path}`);
-    }
+		await this.page.goto(`main#${path}`);
+	}
 
 	public async click提交() {
 		await this.locators.button("提交").click()
@@ -27,13 +27,13 @@ export default abstract class PageComponent {
 		await this.locators.button("新建").click()
 	}
 
-	
+
 	/**
 	 * 生成表格
 	 * @param tableUniqueText 表格的唯一文本标识符
 	 * @returns 表格对象
 	 */
-	public table(tableUniqueText: string){
+	public table(tableUniqueText: string) {
 		return new Table(this.page, tableUniqueText)
 	}
 
@@ -49,7 +49,7 @@ export default abstract class PageComponent {
 		));
 	}
 
-	
+
 	/**
 	 * 填写表单
 	 * @param fields 字段名和值的映射
@@ -58,7 +58,7 @@ export default abstract class PageComponent {
 		for (const [field, value] of Object.entries(fields)) {
 			let inputAncestors: Locator;
 			if (typeof field === 'string') {
-				inputAncestors = this.locators.inputAncestors(field);
+				inputAncestors = this.locators.locatorFollowingLabel(field);
 			} else {
 				inputAncestors = field;
 			}
@@ -154,26 +154,28 @@ class Locators {
 		return this.page.locator("//*[contains(class, 'cascader')]")
 	}
 
-	button(name: string): Locator {
+	button(name: string, onlyVisible = true): Locator {
+		let buttonLocator = this.page.locator(`button`)
 		// name中间不包含空格且为中文时,字符间加入空格,以使用正则匹配
-		if (!name.includes(' ') && /^[\u4e00-\u9fa5]+$/.test(name) ) {
+		if (!name.includes(' ') && /^[\u4e00-\u9fa5]+$/.test(name)) {
 			const regex = new RegExp(name.split('').join('.*'), 'i');
-			return this.page.locator(`button`).filter({ has: this.page.getByText(regex, { exact: true }) });
+			buttonLocator = buttonLocator.filter({ has: this.page.getByText(regex, { exact: true }) });
 		} else {
-			return this.page.locator(`button`).filter({ has: this.page.getByText(name, { exact: true }) });
+			buttonLocator = buttonLocator.filter({ has: this.page.getByText(name, { exact: true }) });
 		}
+		return this.onlyVisible(buttonLocator, onlyVisible)
 	}
 
 	/**
-	 * 取lable后第一个包含input或textarea的元素,便于判断input输入类型
+	 * lable后的第一个元素,用于定位字段后的输入框或只读文本
 	 * @param name label标签的文本
 	 * @param nth 第几个label标签
-	 * @returns input或textarea元素的祖先元素的定位器
+	 * @returns label后的第一个元素
 	 */
-
-	inputAncestors(name: string, nth = -1): Locator {
+	locatorFollowingLabel(name: string, nth = -1, onlyVisible = true): Locator {
 		const regex = new RegExp(`^\\s*${name}\\s*$`, 'i');
-		return this.page.locator("label").filter({ has: this.page.getByText(regex, { exact: true }) }).nth(nth).locator("xpath=/following::*[position()=1]").filter({ has: this.page.locator("input,textarea") })
+		const locator = this.page.locator("label").filter({ has: this.page.getByText(regex, { exact: true }) }).nth(nth).locator("xpath=/following::*[position()=1]")
+		return this.onlyVisible(locator, onlyVisible)
 	}
 
 	/**
@@ -182,9 +184,8 @@ class Locators {
 	 * @param nth 第几个label标签
 	 * @returns input或textarea元素的定位器
 	 */
-	input(name: string, nth = -1): Locator {
-		const regex = new RegExp(`^\\s*${name}\\s*$`, 'i');
-		return this.page.locator("label").filter({ hasText: regex }).nth(nth).locator("xpath=/following::*[position()=1]").locator("input,textarea")
+	input(name: string, nth = -1, onlyVisible = true): Locator {
+		return this.locatorFollowingLabel(name, nth, onlyVisible).locator("input,textarea")
 	}
 
 	get selectOptions(): Locator {
@@ -193,5 +194,19 @@ class Locators {
 
 	get modal(): Locator {
 		return this.page.locator(`//div[contains(@class,"modal-content")]`)
+	}
+
+	
+	/**
+	 * 根据visible参数过滤定位器
+	 * @param locator 元素的定位器
+	 * @param visible 是否只返回可见元素
+	 * @returns 过滤后的定位器
+	 */
+	onlyVisible(locator: Locator, visible?: boolean): Locator {
+		if (visible) {
+			return locator.filter({ has: this.page.locator("visible=true") });
+		}
+		return locator;
 	}
 }
