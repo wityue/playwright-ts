@@ -52,7 +52,7 @@ fillTable可通过Table类获取cellLocator后直接调用fillForm进行填写�
 
 #### table.ts 获取表格cellLocator
 
-tableLocator需要根据项目情况自行适配。  
+table在Locators内定义,需要根据项目情况自行适配。  
 获取到cellLocator后,可使用playwright Locator的所有方法进行操作。  
 
 #### 其他Page对象,继承PageCompoment,实现Page内方法

@@ -1,9 +1,10 @@
 import type { Page, Locator } from 'playwright-core';
 import { test } from '@playwright/test';
+import { Locators } from './Locators';
 
-export default class Table {
+export class Table {
+  private locators: Locators
   private readonly tableLocator: Locator;
-
 
   /**
    * 构造函数
@@ -11,11 +12,11 @@ export default class Table {
    * @param tableUniqueText 表格唯一文本,可以接收一组文本。
    */
   constructor(private page: Page, private tableUniqueText: string | string[]) {
-    this.tableLocator = this.page.locator('//div[contains(@class,"singleTable")]').filter( { has: this.page.locator("visible=true") } )
+    this.locators = new Locators(page)
     if (typeof tableUniqueText === "string") {
-      this.tableLocator = this.tableLocator.filter({ hasText: `${this.tableUniqueText}` });
+      this.tableLocator = this.locators.table.filter({ hasText: `${this.tableUniqueText}` });
     } else {
-      this.tableLocator = tableUniqueText.reduce((acc, text) => acc.filter({ hasText: text }), this.tableLocator);
+      this.tableLocator = tableUniqueText.reduce((acc, text) => acc.filter({ hasText: text }), this.locators.table);
     }
   }
 
@@ -49,8 +50,7 @@ export default class Table {
         .filter({ has: this.page.getByText(`${row}`, { exact: true }) });
     } else {
       return this.tableLocator
-        .locator('tbody')
-        .locator('tr')
+        .locator('tbody tr')
         .locator('visible=true')
         .nth(row - 1);
     }
