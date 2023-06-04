@@ -25,6 +25,74 @@ async function newContext(
     context.on('response', data => ListenResponse(data));
     context.on('page', page => onPage(pages, page));
   })
+
+  // 使用MutationObserver监听DOM变化，结合PerformanceObserver获取最后一次响应的返回时间，以达到loading时禁止点击输入等操作.
+  await context.addInitScript(() => {
+    // 获取最后一次网络请求的结束时间
+    var lastResponseEndTime = 0;
+    const apiObserver = new PerformanceObserver((list) => {
+      const entries = list.getEntries();
+      const lastEntry = entries[entries.length - 1];
+      const lastEntryHost = lastEntry.name.match(/^https?:\/\/([^/?#]+)/i)?.[1];
+      if (lastEntryHost === location.host) {
+        lastResponseEndTime = Date.now();
+      }
+    });
+    apiObserver.observe({ entryTypes: ['resource'] });
+    // 观察DOM变化，对新增的按钮等进行disable或hidden,同时获取loading元素数量
+    var spinCounter = 0;
+    const domObserver = new MutationObserver((mutationsList) => {
+      const findAllElementsNeedToDisable = element => [
+        ...(element.tagName === 'BUTTON' && !element.disabled ? [element.disabled = true && element] : []),
+        ...(element.tagName === 'svg' && !element.ariaHidden && !element.closest('button') ? [element.closest('div').hidden = true && element.closest('div')] : []),
+        ...(Array.from(element.children || [])).flatMap(findAllElementsNeedToDisable)
+      ];
+      let elementsToRestore: (HTMLButtonElement | HTMLDivElement)[] = [];
+      for (const mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+          if (mutation.target instanceof HTMLElement && mutation.target.classList) {
+            const classString = mutation.target.classList.toString()
+            if (mutation.addedNodes.length > 0) {
+              const disabledElements = Array.from(mutation.addedNodes || []).flatMap(findAllElementsNeedToDisable);
+              elementsToRestore = elementsToRestore.concat(disabledElements)
+            }
+            if (classString.includes('-spin-nested-loading')) {
+              if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                spinCounter++;
+              }
+              if (mutation.removedNodes && mutation.removedNodes.length > 0) {
+                spinCounter--;
+              }
+            }
+          }
+        }
+      }
+      // 当目前无loading,且最后一次网络请求结束timeOut时间以上,恢复元素状态.
+      if (elementsToRestore.length > 0) {
+        const timeOut = 300
+        const intervalId = setInterval(() => {
+          const now = Date.now();
+          if ((spinCounter === 0 || !document.querySelector("[class$='-spin-dot-spin']")) && now - lastResponseEndTime > timeOut) {
+            for (const element of elementsToRestore) {
+              if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
+                element.disabled = false;
+              } else if (element.tagName === "DIV") {
+                element.hidden = false;
+              }
+            }
+            spinCounter = 0
+            clearInterval(intervalId)
+          }
+        }, timeOut + 100);
+      }
+    })
+    if (document.body) {
+      domObserver.observe(document.body, { childList: true, subtree: true })
+    } else {
+      window.addEventListener('DOMContentLoaded', () => domObserver.observe(document.body, { childList: true, subtree: true }))
+    }
+  })
+
   async function close(testInfo: TestInfo): Promise<void> {
     await context.close()
     const testFailed = testInfo.status !== testInfo.expectedStatus;
@@ -92,7 +160,7 @@ async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
     // remove html tag
     content = content.replace(/<\/?[^>]+(>|$)/g, '');
   }
-  let popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").locator( "visible=true" )
+  let popup = page.locator(".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))").locator("visible=true")
   if (subject) {
     popup = popup.filter({ hasText: subject });
   }
