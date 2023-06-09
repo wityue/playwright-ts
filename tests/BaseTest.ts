@@ -29,7 +29,7 @@ async function newContext(
   // 使用MutationObserver监听DOM变化，结合PerformanceObserver获取最后一次响应的返回时间，以达到loading时禁止点击输入等操作.
   await context.addInitScript(() => {
     // 获取最后一次网络请求的结束时间
-    var lastResponseEndTime = 0;
+    let lastResponseEndTime = 0;
     const apiObserver = new PerformanceObserver((list) => {
       const entries = list.getEntries();
       const lastEntry = entries[entries.length - 1];
@@ -40,7 +40,7 @@ async function newContext(
     });
     apiObserver.observe({ entryTypes: ['resource'] });
     // 观察DOM变化，对新增的按钮等进行disable或hidden,同时获取loading元素数量
-    var spinCounter = 0;
+    let spinCounter = 0;
     const domObserver = new MutationObserver((mutationsList) => {
       const findAllElementsNeedToDisable = element => [
         ...(element.tagName === 'BUTTON' && !element.disabled ? [element.disabled = true && element] : []),
