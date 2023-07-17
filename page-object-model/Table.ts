@@ -1,9 +1,9 @@
-import type { Page, Locator } from 'playwright-core';
-import { test } from '@playwright/test';
-import { Locators } from './Locators';
+import type { Page, Locator } from "playwright-core";
+import { test } from "@playwright/test";
+import { Locators } from "./Locators";
 
 export class Table {
-  private locators: Locators
+  private locators: Locators;
   private readonly tableLocator: Locator;
 
   /**
@@ -12,20 +12,28 @@ export class Table {
    * @param tableUniqueText 表格唯一文本,可以接收一组文本。
    */
   constructor(private page: Page, private tableUniqueText: string | string[]) {
-    this.locators = new Locators(page)
+    this.locators = new Locators(page);
     if (typeof tableUniqueText === "string") {
-      this.tableLocator = this.locators.table.filter({ hasText: `${this.tableUniqueText}` });
+      this.tableLocator = this.locators.table.filter({
+        hasText: `${this.tableUniqueText}`,
+      });
     } else {
-      this.tableLocator = tableUniqueText.reduce((acc, text) => acc.filter({ hasText: text }), this.locators.table);
+      this.tableLocator = tableUniqueText.reduce(
+        (acc, text) => acc.filter({ hasText: text }),
+        this.locators.table
+      );
     }
   }
 
   private async getTableHeaders(): Promise<string[]> {
-    return await test.step('Query table headers and return a list', async () => {
-      await this.tableLocator.waitFor({ state: 'visible' });
-      const headers = await this.tableLocator.locator('thead tr th').all();
-      return Promise.all(headers.map((header) => header.innerText()));
-    });
+    return await test.step(
+      "Query table headers and return a list",
+      async () => {
+        await this.tableLocator.waitFor({ state: "visible" });
+        const headers = await this.tableLocator.locator("thead tr th").all();
+        return Promise.all(headers.map((header) => header.innerText()));
+      }
+    );
   }
 
   /**
@@ -44,20 +52,20 @@ export class Table {
   }
 
   private getRowLocator(row: string | number): Locator {
-    if (typeof row === 'string') {
+    if (typeof row === "string") {
       return this.tableLocator
         .locator(`tbody tr`)
         .filter({ has: this.page.getByText(`${row}`, { exact: true }) });
     } else {
       return this.tableLocator
-        .locator('tbody tr')
-        .locator('visible=true')
+        .locator("tbody tr")
+        .locator("visible=true")
         .nth(row - 1);
     }
   }
 
   private async getColumnIndex(col: string | number): Promise<number> {
-    if (typeof col === 'string') {
+    if (typeof col === "string") {
       const headerTexts = await this.getTableHeaders();
       return headerTexts.indexOf(col);
     } else {
