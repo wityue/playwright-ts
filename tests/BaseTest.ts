@@ -8,6 +8,13 @@ import type {
 } from "playwright-core";
 import PagesInstance from "./PagesInstance";
 
+declare global {
+  interface Window {
+    apiCounter: number;
+    lastResponseEndTime: number;
+  }
+}
+
 async function newContext(
   browser: Browser,
   testInfo: TestInfo,
@@ -45,7 +52,7 @@ async function newContext(
       const lastEntry = entries[entries.length - 1];
       const lastEntryHost = lastEntry.name.match(/^https?:\/\/([^/?#]+)/i)?.[1];
       if (lastEntryHost === location.host) {
-        lastResponseEndTime = Date.now();
+        window.lastResponseEndTime = Date.now();
       }
     });
     apiObserver.observe({ entryTypes: ["resource"] });
@@ -67,18 +74,17 @@ async function newContext(
           findAllElementsNeedToDisable
         ),
       ];
-      let elementsToRestore = [];
+      let elementsToRestore: HTMLElement[] = [];
       for (const mutation of mutationsList) {
         if (mutation.type === "childList") {
           if (
             mutation.target instanceof HTMLElement &&
             mutation.target.classList
           ) {
-            const classString = mutation.target.classList.toString();
             if (mutation.addedNodes.length > 0) {
               const disabledElements = Array.from(
                 mutation.addedNodes || []
-              ).flatMap(findAllElementsNeedToDisable);
+              ).flatMap(findAllElementsNeedToDisable) as HTMLElement[];
               elementsToRestore = elementsToRestore.concat(disabledElements);
             }
           }
@@ -91,8 +97,8 @@ async function newContext(
           const now = Date.now();
           if (
             !document.querySelector("[class$='-spin-dot-spin']") &&
-            !apiCounter &&
-            now - lastResponseEndTime > timeOut
+            !window.apiCounter &&
+            now - window.lastResponseEndTime > timeOut
           ) {
             for (const element of elementsToRestore) {
               if (
@@ -253,7 +259,7 @@ type Accounts = {
   empty: PagesInstance;
 };
 
-base.beforeAll(async ({ request }) => {
+base.beforeAll(async ({}) => {
   // 登录有所账号
 });
 
@@ -287,4 +293,4 @@ export const test = base.extend<Accounts>({
 });
 
 export { expect } from "@playwright/test";
-export { PagesInstance };
+export { PagesInstance, newContext };
