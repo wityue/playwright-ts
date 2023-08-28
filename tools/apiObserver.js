@@ -6,7 +6,7 @@
   mask.id = "networkIdleMask";
   let apiCounterElement = document.createElement("span");
   apiCounterElement.style =
-    "font-size: 20px;color: green;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);";
+    "font-size: 20px;color: green;position: absolute;top: 95%;left: 95%;transform: translate(-50%, -50%);";
   apiCounterElement.id = "apiCounter";
 
   // 利用PerformanceObserver最后一次网络请求结束时间,会包含ajaxHooker未包含的部门,如script
@@ -20,12 +20,6 @@
   });
   apiObserver.observe({ entryTypes: ["resource"] });
 
-  ajaxHooker.filter([
-    {
-      url: /^https:\/\/(oc-test|oc-rel|tc|clm|azure|aws|oc-uat)\.onecontract-cloud.com/,
-      async: true,
-    },
-  ]);
   ajaxHooker.hook((request) => {
     window.apiCounter++;
     if (document.body) {
@@ -33,6 +27,13 @@
       mask.appendChild(apiCounterElement);
       document.body.appendChild(mask);
     }
+
+    ajaxHooker.filter([
+      {
+        url: "/api/",
+        async: true,
+      },
+    ]);
 
     request.response = (res) => {
       if (
