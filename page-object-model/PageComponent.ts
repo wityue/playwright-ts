@@ -1,4 +1,5 @@
 import type { Page, Locator } from "playwright-core";
+import { test } from "@playwright/test";
 import { Locators } from "./Locators";
 import { Table } from "./Table";
 
@@ -57,30 +58,33 @@ export default class PageComponent {
     fields: Map<string | Locator, string | null | Array<string>>
   ) {
     for (const [field, value] of Object.entries(fields)) {
-      let inputAncestors: Locator;
-      if (typeof field === "string") {
-        inputAncestors = this.locators.locatorFollowingLabel(field);
-      } else {
-        inputAncestors = field;
-      }
-
-      if (!inputAncestors) {
-        throw new Error(`Input field "${field}" not found`);
-      }
-      await this.waitForAnimationEnd(inputAncestors);
-      switch (this.componentType) {
-        case "OCANT":
-          await this.fillOcAntForm(inputAncestors, value);
-          break;
-        case "C7N":
-          await this.fillC7nForm(inputAncestors, value);
-          break;
-        case "ANT":
-          // Implement ANT specific logic here
-          break;
-        default:
-          throw new Error(`Unsupported component type "${this.componentType}"`);
-      }
+      await test.step(`fill ${value} to ${field}`, async () => {
+        let inputAncestors: Locator;
+        if (typeof field === "string") {
+          inputAncestors = this.locators.locatorFollowingLabel(field);
+        } else {
+          inputAncestors = field;
+        }
+        if (!inputAncestors) {
+          throw new Error(`Input field "${field}" not found`);
+        }
+        await this.waitForAnimationEnd(inputAncestors);
+        switch (this.componentType) {
+          case "OCANT":
+            await this.fillOcAntForm(inputAncestors, value);
+            break;
+          case "C7N":
+            await this.fillC7nForm(inputAncestors, value);
+            break;
+          case "ANT":
+            // Implement ANT specific logic here
+            break;
+          default:
+            throw new Error(
+              `Unsupported component type "${this.componentType}"`
+            );
+        }
+      });
       continue;
     }
   }
@@ -137,5 +141,23 @@ export default class PageComponent {
       default:
         throw new Error(`Unsupported input type "${inputType}"`);
     }
+  }
+
+  public async waitForNetworkIdle(options?: { timeout: number }) {
+    const { timeout = 30000 } = options || {};
+    const startTime = Date.now();
+    await test.step("waitForNetworkIdle", async () => {
+      while (Date.now() - startTime < timeout) {
+        const apiCounter = await this.page.evaluate(() => window.apiCounter);
+        const lastResponseEndTime = await this.page.evaluate(
+          () => window.lastResponseEndTime
+        );
+        if (!apiCounter && Date.now() - lastResponseEndTime >= 500) {
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      throw new Error("Network idle timeout exceeded");
+    });
   }
 }
