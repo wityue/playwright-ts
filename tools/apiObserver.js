@@ -14,11 +14,21 @@
     const entries = list.getEntries();
     const lastEntry = entries[entries.length - 1];
     const lastEntryHost = lastEntry.name.match(/^https?:\/\/([^/?#]+)/i)?.[1];
-    if (lastEntryHost === location.host) {
+    if (
+      lastEntryHost === location.host ||
+      lastEntry.name.includes("https://cdn")
+    ) {
       window.lastResponseEndTime = Date.now();
     }
   });
   apiObserver.observe({ entryTypes: ["resource"] });
+
+  ajaxHooker.filter([
+    {
+      url: "/api/",
+      async: true,
+    },
+  ]);
 
   ajaxHooker.hook((request) => {
     window.apiCounter++;
@@ -27,14 +37,6 @@
       mask.appendChild(apiCounterElement);
       document.body.appendChild(mask);
     }
-
-    ajaxHooker.filter([
-      {
-        url: "/api/",
-        async: true,
-      },
-    ]);
-
     request.response = (res) => {
       if (
         window.apiCounter === 0 &&
