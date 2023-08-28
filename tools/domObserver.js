@@ -29,7 +29,7 @@ const domObserver = new MutationObserver((mutationsList) => {
   }
   // 当目前无loading,且最后一次网络请求结束timeOut时间以上,恢复元素状态.
   if (elementsToRestore.length > 0) {
-    const timeOut = 300;
+    const timeOut = 90;
     const intervalId = setInterval(() => {
       const now = Date.now();
       if (!window.apiCounter && now - window.lastResponseEndTime > timeOut) {
@@ -45,7 +45,7 @@ const domObserver = new MutationObserver((mutationsList) => {
         }
         clearInterval(intervalId);
       }
-    }, timeOut + 100);
+    }, timeOut);
   }
 });
 if (document.body) {
