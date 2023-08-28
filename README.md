@@ -9,7 +9,9 @@
 2.监听HTTP请求，捕获接口异常报错，确保接口的稳定性和测试的可靠性。  
 3.监听WebSocket消息，隐藏弹窗并输出消息内容到控制台,避免弹窗造成用例误失败。  
 4.封装表单和表格填写方法，通过{key1: value1, key2: value2}的方式快速操作。  
-5.集成dataclass,进行测试数据管理,与表单和表格的填写方法结合,使测试更轻松.
+5.集成dataclass,进行测试数据管理,与表单和表格的填写方法结合,使测试更轻松.  
+6.注入javascript脚本,监听xhr以及fetch类型API请求，仅当无API正在请求时，放开web界面操作,过滤规则在tools/apiObserver.js中进行配置.  
+7.注入javascript脚本,监听dom变化,对新出现的button,input等按钮disble,当无API正在请求时，恢复disable元素状态.
 
 ## 安装 && 测试
 
@@ -71,3 +73,17 @@ dataclass 官方文档:<https://dataclass.js.org/guide/>
 #### BaseTest.ts
 
 包含Context的创建和关闭方法,以及继承playwright test编写的各个用户fixture信息,其他用例从此文件import test即可进行用例编写,编写方式可至playwright官方文档学习。  
+
+### tools
+
+#### ajaxHooker.js
+
+引用cxxjackie脚本,增加API请求计数,感谢原作者,原文链接:<https://bbs.tampermonkey.net.cn/thread-3284-13-1.html>
+
+#### apiObserver.js
+
+调用ajaxHooker方法,实现当有API请求（XHR和Fetch类型）时,增加蒙层,禁止操作，当前无API正在请求且上一API请求结束300ms以上,删除蒙层,恢复操作.
+
+#### domObserver.js
+
+监听dom变化,对新出现的button及input等元素进行disable及enable操作.
