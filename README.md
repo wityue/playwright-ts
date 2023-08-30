@@ -82,7 +82,8 @@ dataclass 官方文档:<https://dataclass.js.org/guide/>
 
 #### apiObserver.js
 
-调用ajaxHooker方法,实现当有API请求（XHR和Fetch类型）时,增加蒙层,禁止操作，当前无API正在请求且上一API请求结束300ms以上,删除蒙层,恢复操作.
+调用ajaxHooker方法,实现当有API请求（XHR和Fetch类型）时,增加蒙层,禁止操作，当前无API正在请求且上一API请求结束80ms以上,删除蒙层,恢复操作.
+某些情况下,添加蒙层会与hover操作冲突,如hover有发起网络请求的动作,会导致hover效果丢失,此时可在hover前通过await page.page.evaluate("window.maskTag=0")禁用蒙层,hover完成之后,通过await page.page.evaluate("window.maskTag=1")启用蒙层.
 
 #### domObserver.js
 
