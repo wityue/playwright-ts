@@ -221,4 +221,4 @@ export const test = base.extend<Accounts>({
 });
 
 export { expect } from "@playwright/test";
-export { PagesInstance, newContext };
+export { PagesInstance, newContext, newPage };
