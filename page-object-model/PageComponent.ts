@@ -4,7 +4,7 @@ import { Locators } from "./Locators";
 import { Table } from "./Table";
 
 export default class PageComponent {
-  public readonly page: Page;
+  public page: Page;
   public readonly componentType: string;
   public locators: Locators;
   constructor(page: Page) {
