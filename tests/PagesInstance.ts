@@ -43,14 +43,16 @@ export default class PagesInstance {
   // 参数:
   //   - page: 要切换到的页面
   //   - previousPage: 是否切换到上一个页面
-  
+
   switchToPage(page?: Page, previousPage?: false) {
     if (page) {
       this.previousPage = page;
       this.page = page;
       return;
     } else if (previousPage) {
+      const current_page = this.page;
       this.page = this.previousPage;
+      this.previousPage = current_page;
       return;
     } else {
       this.page = this.defalutPage;
