@@ -32,11 +32,11 @@ npx playwright test
 contentType.startsWith("video/")  
 
 2.由于监听http请求和Websocket消息,会产生大量相关内容在报告中,影响测试报告阅读体验,可修改以下源码解决:  
-路径:node_modules/@playwright/test/lib/reporters/html.js  
+路径:```node_modules/@playwright/test/lib/reporters/html.js```  
 方法名:_createTestResult  
-steps: result.steps.map(s => this._createTestStep(s)),  
+```steps: result.steps.map(s => this._createTestStep(s)),```  
 修改为:  
-steps: result.steps.filter(s => !s.title.startsWith('DeleteFromTheHtmlreport')).map(s => this._createTestStep(s)),
+```steps: result.steps.filter(s => !s.title.startsWith('DeleteFromTheHtmlreport')).map(s => this._createTestStep(s)),```
 
 ### 也可参照playwright官方文档,使用第三方报告
 
@@ -82,8 +82,19 @@ dataclass 官方文档:<https://dataclass.js.org/guide/>
 
 #### apiObserver.js
 
-调用ajaxHooker方法,实现当有API请求（XHR和Fetch类型）时,增加蒙层,禁止操作，当前无API正在请求且上一API请求结束80ms以上,删除蒙层,恢复操作.
-某些情况下,添加蒙层会与hover操作冲突,如hover有发起网络请求的动作,会导致hover效果丢失,此时可在hover前通过await page.page.evaluate("window.maskTag=0")禁用蒙层,hover完成之后,通过await page.page.evaluate("window.maskTag=1")启用蒙层.
+调用ajaxHooker方法,实现当有API请求（XHR和Fetch类型）时,增加蒙层,禁止操作，当前无API正在请求且上一API请求结束80ms以上,删除蒙层,恢复操作.  
+某些情况下,添加蒙层会与hover操作冲突,如hover有发起网络请求的动作,会导致hover效果丢失,此时可执行以下命令在hover前停用蒙层  
+```await page.page.evaluate("window.maskTag=0")```
+  
+同样的,hover完成之后通过以下命令启用蒙层  
+```await page.page.evaluate("window.maskTag=1")```  
+也可通过调用PagesInstance内temporarilyDisableMask方法禁用再启用,调用方式如下:
+
+```
+await temporarilyDisableMask(async () => {
+    //your code here
+});
+```
 
 #### domObserver.js
 
