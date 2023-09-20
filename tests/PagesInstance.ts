@@ -48,15 +48,14 @@ export default class PagesInstance {
     if (page) {
       this.previousPage = page;
       this.page = page;
-      return;
     } else if (previousPage) {
       const current_page = this.page;
       this.page = this.previousPage;
       this.previousPage = current_page;
-      return;
     } else {
       this.page = this.defalutPage;
     }
+    this.page.bringToFront()
   }
 
   // 临时停用mask,避免添加mask对playwright操作造成意外影响
