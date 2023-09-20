@@ -3,6 +3,8 @@
   const win = window.unsafeWindow || document.defaultView || window;
   // 用于控制是否增加蒙层, 临时禁止:await page.evaluate("window.maskTag=0") 恢复:await page.evaluate("window.maskTag=1")
   win.maskTag = 1;
+  win.apiCounter = 0;
+  win.lastResponseEndTime = 0;
   let mask = document.createElement("div");
   mask.style =
     "position: fixed;top: 0;right: 0;bottom: 0;left: 0;z-index: 1000;height: 100%;background-color: rgba(0,0,0,.0)";
@@ -29,7 +31,7 @@
 
   ajaxHooker.filter([
     {
-      url: "/api/",
+      url: /^https:\/\/(oc-test|oc-rel|tc|clm|azure|aws|oc-uat)\.onecontract-cloud.com/,
       async: true,
     },
   ]);
@@ -44,6 +46,8 @@
           document.body.appendChild(mask);
         }
         request.response = (res) => {
+          win.apiCounter--;
+          win.lastResponseEndTime = Date.now();
           if (
             win.apiCounter === 0 &&
             document.getElementById("networkIdleMask")
