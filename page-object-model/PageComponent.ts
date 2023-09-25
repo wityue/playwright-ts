@@ -144,20 +144,26 @@ export default class PageComponent {
   }
 
   public async waitForNetworkIdle(options?: { timeout: number }) {
-    const { timeout = 30000 } = options || {};
+    // 存初次lastResponseEndTime,当循环3次lastResponseEndTime无变化时,认定页面稳定,退出循环
+    const tempTime = await this.page.evaluate(() => window.lastResponseEndTime);
+    let count = 3
     const startTime = Date.now();
+    const { timeout = 30000 } = options || {};
     await test.step("waitForNetworkIdle", async () => {
-      while (Date.now() - startTime < timeout) {
+      while (Date.now() - startTime < timeout && count) {
         const apiCounter = await this.page.evaluate(() => window.apiCounter);
         const lastResponseEndTime = await this.page.evaluate(
           () => window.lastResponseEndTime
         );
         if (!apiCounter && Date.now() - lastResponseEndTime >= 500) {
-          return;
+          if (lastResponseEndTime !== tempTime) {
+            return;
+          } else {
+            count--;
+          }
         }
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
-      throw new Error("Network idle timeout exceeded");
     });
   }
 }
