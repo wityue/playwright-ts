@@ -36,6 +36,31 @@ export class Table {
     );
   }
 
+  private get getVisibleRow(){
+    return this.tableLocator
+    .locator("tbody tr")
+    .locator("visible=true")
+  }
+
+  private getRowLocator(row: string | number): Locator {
+    if (typeof row === "string") {
+      return this.tableLocator
+        .locator(`tbody tr`)
+        .filter({ has: this.page.getByText(`${row}`, { exact: true }) });
+    } else {
+      return this.getVisibleRow.nth(row - 1);
+    }
+  }
+
+  private async getColumnIndex(col: string | number): Promise<number> {
+    if (typeof col === "string") {
+      const headerTexts = await this.getTableHeaders();
+      return headerTexts.indexOf(col);
+    } else {
+      return col;
+    }
+  }
+  
   /**
    * 根据行和列的索引或文本,返回单元格的元素定位器
    * @param row 行索引或文本
@@ -51,25 +76,14 @@ export class Table {
     return rowLocator.locator(`td:nth-child(${colIndex + 1})`);
   }
 
-  private getRowLocator(row: string | number): Locator {
-    if (typeof row === "string") {
-      return this.tableLocator
-        .locator(`tbody tr`)
-        .filter({ has: this.page.getByText(`${row}`, { exact: true }) });
-    } else {
-      return this.tableLocator
-        .locator("tbody tr")
-        .locator("visible=true")
-        .nth(row - 1);
-    }
-  }
-
-  private async getColumnIndex(col: string | number): Promise<number> {
-    if (typeof col === "string") {
-      const headerTexts = await this.getTableHeaders();
-      return headerTexts.indexOf(col);
-    } else {
-      return col;
-    }
+  /**
+   * 获取表格一列元素的text并返回list
+   * @param col 列索引或文本
+   * @returns 返回单元格的text列表
+   */
+  public async getColumnTexts(col: string | number): Promise<string[]> {
+    const colIndex = await this.getColumnIndex(col);
+    const column = await this.getVisibleRow.locator(`td:nth-child(${colIndex + 1})`).all();
+    return Promise.all(column.map((cell) => cell.innerText()));
   }
 }
