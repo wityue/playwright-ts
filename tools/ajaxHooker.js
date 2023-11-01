@@ -129,7 +129,7 @@ var ajaxHooker = (function () {
                     emptyFn,
                     errorFn
                 );
-            } catch {
+            } catch (err) {
                 console.error(err);
                 return Promise.resolve();
             }

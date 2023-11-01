@@ -28,7 +28,7 @@
   });
   ajaxHooker.filter([
       {
-          url: /^https:\/\/(test|demo)\.cloudlong.cn/,
+            url: /^https:\/\/(oc-test|demo)\.cloudlong.cn/,
           async: true,
   },
 ]);
@@ -42,27 +42,33 @@
                   document.body.appendChild(mask);
               }
               request.response = (res) => {
-                  if (
-                      win.apiCounter === 0 &&
-                      document.getElementById("networkIdleMask")
-                  ) {
-                      const timeOut = 10000;
-                      const startTime = Date.now();
-                      const intervalId = setInterval(() => {
-                          if (
-                              !win.apiCounter &&
-                              Date.now() - win.lastResponseEndTime > 80
-                          ) {
-                              if (document.getElementById("networkIdleMask")) {
-                                  document.getElementById("networkIdleMask").remove();
-                              }
-                              clearInterval(intervalId);
-                          }
-                          if (Date.now() - startTime > timeOut) {
-                              clearInterval(intervalId);
-                          }
-                      }, 80);
-                  }
+                if (res.status === 403){
+                    win.alert("API:" + res.finalUrl + "-----failInfo:Response status is 403");
+                }else if(res.json && res.json.hasOwnProperty("failed"))
+                {
+                    win.alert("API:" + res.finalUrl + "-----failInfo:" + res.json.message);
+                }
+                if (
+                    win.apiCounter === 0 &&
+                    document.getElementById("networkIdleMask")
+                ) {
+                    const timeOut = 10000;
+                    const startTime = Date.now();
+                    const intervalId = setInterval(() => {
+                        if (
+                            !win.apiCounter &&
+                            Date.now() - win.lastResponseEndTime > 80
+                        ) {
+                            if (document.getElementById("networkIdleMask")) {
+                                document.getElementById("networkIdleMask").remove();
+                            }
+                            clearInterval(intervalId);
+                        }
+                        if (Date.now() - startTime > timeOut) {
+                            clearInterval(intervalId);
+                        }
+                    }, 80);
+                }
               };
           }
       } catch (error) {

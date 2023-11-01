@@ -1,10 +1,8 @@
-import { test as base, TestInfo } from "@playwright/test";
+import { test as base, expect, TestInfo } from "@playwright/test";
 import type {
   Browser,
   BrowserContext,
   Page,
-  Response,
-  WebSocket,
 } from "playwright-core";
 import PagesInstance from "./PagesInstance";
 
@@ -23,7 +21,7 @@ async function newContext(
   context: BrowserContext;
   close: (testInfo: TestInfo) => Promise<void>;
 }> {
-  const pages = [];
+  let pages: Page[] = [];
   const video = testInfo.project.use.video;
   const videoMode = normalizeVideoMode(video);
   const captureVideo = shouldCaptureVideo(videoMode, testInfo);
@@ -36,10 +34,12 @@ async function newContext(
       }
     : {};
   const context = await browser.newContext(videoOptions);
-  await test.step("DeleteFromTheHtmlreport-监听", async () => {
-    context.on("response", (data) => ListenResponse(data));
-    context.on("page", (page) => onPage(pages, page));
-  });
+  context.on("dialog", async (dialog) => { 
+    const message = dialog.message(); 
+    await dialog.accept();
+    expect.soft(message, { message: "API报错：" + message }).not.toContain("failInfo")
+  })
+  context.on("page", (page) => pages.push(page));
 
   // 使用MutationObserver监听DOM变化，结合PerformanceObserver获取最后一次响应的返回时间，以达到loading时禁止点击输入等操作.
   await context.addInitScript({
@@ -109,75 +109,6 @@ function shouldCaptureVideo(videoMode: string, testInfo: TestInfo): boolean {
     videoMode === "retain-on-failure" ||
     (videoMode === "on-first-retry" && testInfo.retry === 1)
   );
-}
-
-interface WSMessage {
-  message: {
-    subject?: string;
-    content?: string;
-  };
-}
-
-async function ListenWebScoket(page: Page, ws: WebSocket): Promise<void> {
-  const wsmsg = await new Promise((resolve) => {
-    ws.on("framereceived", (event) => {
-      console.log(event.payload);
-      resolve(event.payload);
-    });
-  });
-  // Extract subject and content from wsmsg if it contains message with subject or content
-  let subject = "",
-    content = "";
-  if (wsmsg && typeof wsmsg === "object" && (wsmsg as WSMessage).message) {
-    const message = (wsmsg as WSMessage).message;
-    subject = message.subject || "";
-    content = message.content || "";
-    // remove html tag
-    content = content.replace(/<\/?[^>]+(>|$)/g, "");
-  }
-  let popup = page
-    .locator(
-      ".c7n-notification-notice:has(.c7n-notification-notice-icon:not(.icon))"
-    )
-    .locator("visible=true");
-  if (subject) {
-    popup = popup.filter({ hasText: subject });
-  }
-  if (content) {
-    for (const char of content) {
-      popup = popup.filter({ hasText: char });
-    }
-  }
-  await popup.evaluate((node) => (node.style.display = "none"));
-}
-
-async function ListenResponse(response: Response): Promise<void> {
-  await test.step("DeleteFromTheHtmlreport-监听", async () => {
-    if (!response.url().includes("https://cdn-")) {
-      if (response.status() === 403) {
-        console.log("Response status code is 403");
-      } else if (
-        response.status() === 200 &&
-        (await response.headerValue("Content-Type")) === "application/json"
-      ) {
-        try {
-          const resJson = await response.json();
-          if (resJson.failed) {
-            console.log(resJson.message);
-          }
-        } catch (e) {
-          // Silent catch empty videos.
-        }
-      }
-    }
-  });
-}
-
-async function onPage(pages: Array<Page>, page: Page) {
-  pages.push(page);
-  await test.step("DeleteFromTheHtmlreport-监听", async () => {
-    page.on("websocket", (ws) => ListenWebScoket(page, ws));
-  });
 }
 
 type Accounts = {

@@ -1,5 +1,9 @@
 // 观察DOM变化，对新增的按钮等进行disable或hidden,同时获取loading元素数量
 const domObserver = new MutationObserver((mutationsList) => {
+  // listenElementsClassName中元素出现style.display属性将被设置为none,且不会被恢复,防止此类元素出现影响UI自动化操作其他元素
+  // 如需判断页面中存在这些这些元素,只需playwrigh locator.waitFor("attached")即可.
+  const listenElementsClassName = ["c7n-notification-notice request"];
+  // 临时被禁用,网络结束后启用的元素
   const findAllElementsNeedToDisable = (element) => [
     ...(element.tagName === "BUTTON" && !element.disabled
       ? [(element.disabled = true && element)]
@@ -8,8 +12,8 @@ const domObserver = new MutationObserver((mutationsList) => {
       ? [(element.disabled = true && element)]
       : []),
     ...(element.tagName === "svg" &&
-    !element.ariaHidden &&
-    !element.closest("button")
+      !element.ariaHidden &&
+      !element.closest("button")
       ? [(element.closest("div").hidden = true && element.closest("div"))]
       : []),
     ...Array.from(element.children || []).flatMap(findAllElementsNeedToDisable),
@@ -17,13 +21,20 @@ const domObserver = new MutationObserver((mutationsList) => {
   let elementsToRestore = [];
   for (const mutation of mutationsList) {
     if (mutation.type === "childList") {
-      if (mutation.target instanceof HTMLElement && mutation.target.classList) {
-        if (mutation.addedNodes.length > 0) {
-          const disabledElements = Array.from(
-            mutation.addedNodes || []
-          ).flatMap(findAllElementsNeedToDisable);
-          elementsToRestore = elementsToRestore.concat(disabledElements);
-        }
+      const { target, addedNodes } = mutation;
+      if (target instanceof HTMLElement && target.classList && addedNodes.length > 0) {
+        const disabledElements = Array.from(addedNodes || []).flatMap(findAllElementsNeedToDisable);
+        elementsToRestore = elementsToRestore.concat(disabledElements);
+        addedNodes.forEach((addedNode) => {
+          if (typeof addedNode.className === 'string') {
+            for (const className of listenElementsClassName) {
+              if (addedNode.className.includes(className)) {
+                addedNode.style.display = "none";
+                break;
+              }
+            }
+          }
+        });
       }
     }
   }
