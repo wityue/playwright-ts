@@ -2,6 +2,7 @@
   "use strict";
   const win = window.unsafeWindow || document.defaultView || window;
   win.maskTag = 1;
+  win.dialogTag = 1;
   let mask = document.createElement("div");
   mask.style =
       "position: fixed;top: 0;right: 0;bottom: 0;left: 0;z-index: 1000;height: 100%;background-color: rgba(0,0,0,.0)";
@@ -42,9 +43,9 @@
                   document.body.appendChild(mask);
               }
               request.response = (res) => {
-                if (res.status === 403){
+                if (win.dialogTag && res.status === 403){
                     win.alert("API:" + res.finalUrl + "-----failInfo:Response status is 403");
-                }else if(res.json && res.json.hasOwnProperty("failed"))
+                }else if(win.dialogTag && res.json && res.json.hasOwnProperty("failed"))
                 {
                     win.alert("API:" + res.finalUrl + "-----failInfo:" + res.json.message);
                 }
