@@ -73,4 +73,20 @@ export default class PagesInstance {
       await this.page.evaluate("window.maskTag=1");
     }
   }
+
+    // 临时停用dialog,避免添加异常测试时,误处发接口告警
+  //
+  // 参数:
+  //   - callback: 要执行的回调函数
+  //
+  // 返回值:
+  //   - Promise<R>: 异步回调函数的返回值
+  async temporarilyDisableDialog<R>(callback: () => Promise<R>): Promise<R> {
+    await this.page.evaluate("window.diaglogTag=0");
+    try {
+      return await callback();
+    } finally {
+      await this.page.evaluate("window.dialogTag=1");
+    }
+  }
 }
