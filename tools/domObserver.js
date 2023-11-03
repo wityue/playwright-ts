@@ -45,7 +45,10 @@ const domObserver = new MutationObserver((mutationsList) => {
     const timeOut = 90;
     const intervalId = setInterval(() => {
       const now = Date.now();
-      if (!window.apiCounter && now - window.lastResponseEndTime > timeOut && now - window.lastDomEndTime > timeOut + 20) {
+      if (!window.apiCounter && 
+          now - window.lastResponseEndTime > timeOut && 
+          now - window.lastDomEndTime > timeOut + 20,
+          !window.domStatus) {
         for (const element of elementsToRestore) {
           if (
             element instanceof HTMLButtonElement ||
