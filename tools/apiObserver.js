@@ -1,8 +1,12 @@
 (function () {
   "use strict";
   const win = window.unsafeWindow || document.defaultView || window;
+  // maskTag标记
   win.maskTag = 1;
   win.dialogTag = 1;
+  // 记录dom情况,由domObserver.js修改
+  win.domStatus = 0;
+  win.lastDomEndTime = 0;
   let mask = document.createElement("div");
   mask.style =
       "position: fixed;top: 0;right: 0;bottom: 0;left: 0;z-index: 1000;height: 100%;background-color: rgba(0,0,0,.0)";
@@ -61,9 +65,13 @@
                             Date.now() - win.lastResponseEndTime > 80
                         ) {
                             if (document.getElementById("networkIdleMask")) {
-                                document.getElementById("networkIdleMask").remove();
+                                if ( !win.domStatus && now - win.lastDomEndTime > 100 ){
+                                    document.getElementById("networkIdleMask").remove();
+                                    clearInterval(intervalId);
+                                }
+                            } else {
+                               clearInterval(intervalId);
                             }
-                            clearInterval(intervalId);
                         }
                         if (Date.now() - startTime > timeOut) {
                             clearInterval(intervalId);

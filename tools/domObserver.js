@@ -1,5 +1,7 @@
 // 观察DOM变化，对新增的按钮等进行disable或hidden,同时获取loading元素数量
 const domObserver = new MutationObserver((mutationsList) => {
+  // 供apiObserver.js判断当前dom正在变动
+  window.domStatus = 1;
   // listenElementsClassName中元素出现style.display属性将被设置为none,且不会被恢复,防止此类元素出现影响UI自动化操作其他元素
   // 如需判断页面中存在这些这些元素,只需playwrigh locator.waitFor("attached")即可.
   const listenElementsClassName = ["c7n-notification-notice request"];
@@ -43,7 +45,7 @@ const domObserver = new MutationObserver((mutationsList) => {
     const timeOut = 90;
     const intervalId = setInterval(() => {
       const now = Date.now();
-      if (!window.apiCounter && now - window.lastResponseEndTime > timeOut) {
+      if (!window.apiCounter && now - window.lastResponseEndTime > timeOut && now - window.lastDomEndTime > timeOut + 20) {
         for (const element of elementsToRestore) {
           if (
             element instanceof HTMLButtonElement ||
@@ -58,6 +60,8 @@ const domObserver = new MutationObserver((mutationsList) => {
       }
     }, timeOut);
   }
+  window.lastDomEndTime = Date.now();
+  window.domStatus = 0;
 });
 if (document.body) {
   domObserver.observe(document.body, { childList: true, subtree: true });
