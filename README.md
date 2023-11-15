@@ -36,8 +36,12 @@ contentType.startsWith("video/")
 方法名:_createTestResult  
 ```steps: result.steps.map(s => this._createTestStep(s)),```  
 修改为:  
-```steps: result.steps.filter(s => !s.title.startsWith('DeleteFromTheHtmlreport')).map(s => this._createTestStep(s)),```
-
+```steps: result.steps.filter(s => !s.title.startsWith('DeleteFromTheHtmlreport')).map(s => this._createTestStep(s)),```  
+如无此文件,则修改路径```node_modules/playwright/lib/reporters/html.js```  
+方法名:_createTestResult  
+```steps: dedupeSteps(result.steps).map(s => this._createTestStep(s)),```  
+修改为:  
+```steps: dedupeSteps(result.steps).filter(s => !s.step.title.startsWith('DeleteFromTheHtmlreport')).map(s => this._createTestStep(s)),```
 ### 也可参照playwright官方文档,使用第三方报告
 
 <https://playwright.dev/docs/test-reporters#html-reporter>
