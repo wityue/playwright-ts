@@ -33,7 +33,7 @@
   });
   ajaxHooker.filter([
       {
-            url: /^https:\/\/(oc-test|demo)\.cloudlong.cn/,
+            url: /^https:\/\/(oc-test|demo|oc-rel)\.onecontract-cloud.com/,
           async: true,
   },
 ]);
@@ -65,7 +65,7 @@
                             Date.now() - win.lastResponseEndTime > 80
                         ) {
                             if (document.getElementById("networkIdleMask")) {
-                                if ( !win.domStatus && now - win.lastDomEndTime > 100 ){
+                                if ( !win.domStatus && Date.now() - win.lastDomEndTime > 100 ){
                                     document.getElementById("networkIdleMask").remove();
                                     clearInterval(intervalId);
                                 }
