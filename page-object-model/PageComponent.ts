@@ -6,11 +6,17 @@ import { Table } from "./Table";
 export default class PageComponent {
   public page: Page;
   public readonly componentType: string;
-  public locators: Locators;
+  private _locators: Locators;
   constructor(page: Page) {
     this.page = page;
     this.componentType = "OCANT";
-    this.locators = new Locators(page);
+  }
+
+  get locators(){
+    if (this._locators?.page !== this.page){
+      this._locators = new Locators(this.page)
+    }
+    return new Locators(this.page)
   }
 
   async goto(path: string) {
